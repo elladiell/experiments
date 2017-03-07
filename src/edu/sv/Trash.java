@@ -1,9 +1,9 @@
-package com.company;
+package edu.sv;
 
 import java.util.Comparator;
 import java.util.PriorityQueue;
 
-public class Main {
+public class Trash {
     class E{}
     enum D{w, e;
     };
