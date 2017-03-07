@@ -65,7 +65,6 @@ public class AlphabetFinder {
                     if (ALPHABET.charAt(alphabetIdx) == s.charAt(j)) {
                         rangeHolder.setCount(++alphabetIdx);
                         rangeHolder.setEnd(j);
-                        rangeHolder.setCount(alphabetIdx);
                     }
                 }
             }
