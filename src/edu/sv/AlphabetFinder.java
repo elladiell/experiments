@@ -19,8 +19,8 @@ public class AlphabetFinder {
 
     public static boolean simpleTask(String s) {
         int alphabetIdx = 0;
-        for (int j = 0; alphabetIdx < ALPHABET.length() && j < LONG_STRING.length(); j++) {
-            if (ALPHABET.charAt(alphabetIdx) == LONG_STRING.charAt(j)) {
+        for (int j = 0; alphabetIdx < ALPHABET.length() && j < s.length(); j++) {
+            if (ALPHABET.charAt(alphabetIdx) == s.charAt(j)) {
                 ++alphabetIdx;
             }
         }
