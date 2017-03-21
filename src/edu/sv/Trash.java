@@ -1,5 +1,7 @@
 package edu.sv;
 
+import java.net.DatagramSocket;
+import java.net.SocketException;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 
@@ -8,7 +10,9 @@ public class Trash {
     enum D{w, e;
     };
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws SocketException {
+        DatagramSocket s = new DatagramSocket();
+//        s.receive();
         D d = D.e;
         E ee ;
         String s3 = new String("lis");
@@ -35,8 +39,8 @@ public class Trash {
 	// write your code here
         PriorityQueue pq = new PriorityQueue();
 
-        byte s = 5;
-        s &= 2;
+//        byte s = 5;
+//        s &= 2;
 
 
 

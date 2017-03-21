@@ -28,21 +28,16 @@ public class AlphabetFinder {
     }
 
     public static RangeHolder shortestAlphabetSequenceLength(String s) {
-        List<RangeHolder> ranges = new ArrayList<>();
-
+        System.gc();
+        Runtime r = Runtime.getRuntime();
+        long mem0 = r.totalMemory() - r.freeMemory();
+        List<RangeHolder> ranges = new ArrayList<>(3);
+        boolean createNewList = true;
         for (int j = 0; j < s.length(); j++) {
-            if (ALPHABET.charAt(0) == s.charAt(j)) {
-                boolean createNewList = true;
-                for (RangeHolder indicesHolder : ranges) {
-                    if (indicesHolder.getCount() <= 1) {
-                        createNewList = false;
-                        break;
-                    }
-                }
-                if (createNewList) {
+            if (ALPHABET.charAt(0) == s.charAt(j) && createNewList) {
                     ranges.add(new RangeHolder());
-                }
             }
+            createNewList = true;
             // older ranges start earlier
             for (int i = ranges.size() - 1; i >= 0; --i) {
                 RangeHolder rangeHolder = ranges.get(i);
@@ -67,6 +62,9 @@ public class AlphabetFinder {
                         rangeHolder.setEnd(j);
                     }
                 }
+                if (rangeHolder.getCount() <= 1) {
+                    createNewList = false;
+                }
             }
         }
         RangeHolder minRange = null;
@@ -75,7 +73,55 @@ public class AlphabetFinder {
                 minRange = ranges.get(0);
             }
         }
+        long mem1 = r.totalMemory() - r.freeMemory();
+        System.out.println("Mem = " + (mem1 - mem0));
         return minRange;
+    }
+
+
+    static class Pos {
+        int posA = -1;
+        int end = -1;
+    }
+
+    public static RangeHolder shortestAEDenis(String s) {
+        System.gc();
+        Runtime r = Runtime.getRuntime();
+        long mem0 = r.totalMemory() - r.freeMemory();
+        int minLength = Integer.MAX_VALUE;
+        int minStart = -1, minEnd = -1;
+        Pos[] pos = new Pos[26]; // 0..25
+        for (int i = 0; i < 26; i++) pos[i] = new Pos();
+        // Time Complexity: O(n)   n = s.length()
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c >= 'a' && c <= 'z') {
+                int idx = c - 'a';
+                if (c == 'a') {
+                    pos[idx].posA = i;
+                    pos[idx].end = i;
+                } else {
+                    if (pos[idx - 1].posA != -1) {
+                        pos[idx].posA = pos[idx - 1].posA;
+                        pos[idx].end = i;
+                        if (c == 'z') {
+                            int len = pos[idx].end - pos[idx].posA + 1;
+                            if (len < minLength) {
+                                minLength = len;
+                                minStart = pos[idx].posA;
+                                minEnd = pos[idx].end;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        long mem1 = r.totalMemory() - r.freeMemory();
+        System.out.println("Mem denis = " + (mem1 - mem0));
+        if (minLength == Integer.MAX_VALUE)
+            return null;
+        else
+            return new RangeHolder(minStart, minEnd);//"Min length = " + minLength + " " + minStart + ".." + minEnd;
     }
 }
 
@@ -85,6 +131,12 @@ class RangeHolder {
     private int count;
 
     public RangeHolder() {
+    }
+
+    public RangeHolder(int start, int end) {
+
+        this.start = start;
+        this.end = end;
     }
 
     public int getCount() {
