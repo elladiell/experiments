@@ -74,7 +74,7 @@ public class FightClub {
                 //we start from the most distant element to the right (left neighbor)
                 if (!notAddedToSeq.get(idx)) continue;
                 if (Win[nodeToVisit.val][idx] == 1) {
-                    SeqList.Node addedNode = seq.tryToAdd(nodeToVisit, idx);
+                    SeqList.Node addedNode = seq.tryToAdd(nodeToVisit, idx, k);
                     if (addedNode != null) {
                         queueNotVisited.offer(addedNode);
                         notAddedToSeq.set(addedNode.val, false);
@@ -136,7 +136,7 @@ class SeqList {
      * @param newVal
      * @return null if no suitable place to add
      */
-    Node tryToAdd(Node old, int newVal) {
+    Node tryToAdd(Node old, int newVal, int soldierPotentialWinner) {
         if (old == null) throw new IllegalArgumentException();
         Node r = null;
         if (newVal > old.val) {
@@ -153,17 +153,17 @@ class SeqList {
                     Node prevNode = old;
                     Node node = prevNode.next;
                     boolean canAdd = true;
-                    while (node != null && node.val < newVal){
-                        if(FightClub.Win[old.val][node.val] == 0){
+                    while (node != null && node.val < newVal) {
+                        if (FightClub.Win[old.val][node.val] == 0 || node.val == soldierPotentialWinner) {
                             canAdd = false;
                             break;
                         }
                         prevNode = node;
                         node = node.next;
                     }
-                    if(canAdd){
+                    if (canAdd) {
                         r = prevNode.next = new Node(newVal, prevNode.next, prevNode);
-                        if(prevNode == tail) tail = r;
+                        if (prevNode == tail) tail = r;
                     }
                 }
             } else {
@@ -177,6 +177,42 @@ class SeqList {
                 } else if (old == tail && head.val > newVal) {
                     r = head = new Node(newVal, head, null);
                     r.next.prev = r;
+                } else {
+                    //на случай если old.value бьёт newVal, но между ними уже стоят другие бойцы.
+                    //проверяем, может ли old.val пробиться
+                    Node prevNode = old;
+                    Node node = prevNode.next;
+                    boolean canAdd = true;
+                    while (node != null && node.val < newVal) {
+                        if (FightClub.Win[old.val][node.val] == 0 || node.val == soldierPotentialWinner) {
+                            canAdd = false;
+                            break;
+                        }
+                        prevNode = node;
+                        node = node.next;
+                    }
+                    if(canAdd) {
+                        node = head;
+                        prevNode = null;
+                        while (node != null && node.val < newVal) {
+                            if (FightClub.Win[old.val][node.val] == 0 || node.val == soldierPotentialWinner) {
+                                canAdd = false;
+                                break;
+                            }
+                            prevNode = node;
+                            node = node.next;
+                        }
+                    }
+                    if (canAdd) {
+                        r = new Node(newVal, prevNode.next, prevNode);
+                        if (prevNode == null) {
+                            r.next = head;
+                            head = r;
+                        }else{
+                            prevNode.next = r;
+                        }
+                        if (prevNode == tail) tail = r;
+                    }
                 }
             } else {
                 r = head = old.prev = new Node(newVal, old, null);
