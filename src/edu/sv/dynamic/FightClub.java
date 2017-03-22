@@ -69,7 +69,7 @@ public class FightClub {
         queueNotVisited.offer(n);
         while (!queueNotVisited.isEmpty()) {
             SeqList.Node nodeToVisit = queueNotVisited.poll();
-            System.out.println("el = " + nodeToVisit.val);
+//            System.out.println("el = " + nodeToVisit.val);
             for (int idx = ((nodeToVisit.val - 1) % N + N) % N; idx != nodeToVisit.val; idx = ((idx - 1) % N + N) % N) {
                 //we start from the most distant element to the right (left neighbor)
                 if (!notAddedToSeq.get(idx)) continue;
@@ -79,7 +79,7 @@ public class FightClub {
                         queueNotVisited.offer(addedNode);
                         notAddedToSeq.set(addedNode.val, false);
                     }
-                    System.out.println(Arrays.toString(seq.toArray()));
+//                    System.out.println(Arrays.toString(seq.toArray()));
                 }
             }
             notAddedToSeq.set(nodeToVisit.val, false);
@@ -127,7 +127,10 @@ class SeqList {
 
     /**
      * Head is always min.  Tail - max.
-     * Adds <code>newVal</code> to suitable place near <code>old</code>
+     * Adds <code>newVal</code> to suitable place near <code>old</code>.
+     * <code>old</code> should be able to have a fight with new node and win - so new
+     * node should become new neighbor of
+     * <code>old</code>. If it is impossible method returns null.
      *
      * @param old
      * @param newVal
