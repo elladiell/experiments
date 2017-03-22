@@ -62,7 +62,7 @@ public class FightClub {
         }
         SeqList seq = new SeqList();
         SeqList.Node n = seq.init(k);
-        System.out.println(Arrays.toString(seq.toArray()));
+//        System.out.println(Arrays.toString(seq.toArray()));
 
         //Kind of breadth-first search
         Queue<SeqList.Node> queueNotVisited = new LinkedList<>();
@@ -147,6 +147,24 @@ class SeqList {
                 } else if (old == head && tail.val < newVal) {
                     r = tail = new Node(newVal, null, tail);
                     r.prev.next = r;
+                } else {
+                    //на случай если old.value бьёт newVal, но между ними уже стоят другие бойцы.
+                    //проверяем, может ли old.val пробиться
+                    Node prevNode = old;
+                    Node node = prevNode.next;
+                    boolean canAdd = true;
+                    while (node != null && node.val < newVal){
+                        if(FightClub.Win[old.val][node.val] == 0){
+                            canAdd = false;
+                            break;
+                        }
+                        prevNode = node;
+                        node = node.next;
+                    }
+                    if(canAdd){
+                        r = prevNode.next = new Node(newVal, prevNode.next, prevNode);
+                        if(prevNode == tail) tail = r;
+                    }
                 }
             } else {
                 r = tail = old.next = new Node(newVal, null, old);
