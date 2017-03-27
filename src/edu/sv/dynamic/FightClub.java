@@ -13,88 +13,84 @@ import java.util.*;
  * @author ampopov
  */
 public class FightClub {
-    // Soldier #row wins soldier #column if Win[#row][#column] == 1
-    public static int[][] Win = {
-//            {0, 1, 0, 1, 0},  //0
-//            {0, 0, 0, 0, 0},  //1
-//            {1, 1, 0, 1, 1},  //2
-//            {0, 1, 0, 0, 1},  //3
-//            {1, 1, 0, 0, 0},  //4
+
+    public static void main(String[] args) {
+        // Soldier #row wins soldier #column if Win[#row][#column] == 1
+        int[][] win = {
+            {0, 1, 0, 1, 0},  //0
+            {0, 0, 0, 0, 0},  //1
+            {1, 1, 0, 1, 1},  //2
+            {0, 1, 0, 0, 1},  //3
+            {1, 1, 0, 0, 0},  //4
 
 //            {-1, 0, 1,},  //0
 //            {1, -1, 0,},  //1
 //            {0, 1, -1,},  //2
 //
-            {-1, 0, 1, 0,},  //0
-            {1, -1, 1, 0,},  //1
-            {0, 0, -1, 1,},  //2
-            {1, 1, 0, -1,},  //3
-    };
-    public static int N = Win.length;
-
-    public static void main(String[] args) {
+//                {-1, 1, 0, 0,},  //0
+//                {0, -1, 1, 0,},  //1
+//                {1, 0, -1, 1,},  //2
+//                {1, 1, 0, -1,},  //3
+        };
+        List<Integer> winners = getPotentialWinners(win);
         System.out.println("Potential winners:");
-        for (int soldier : getPotentialWinners()) {
+        for (int soldier : winners) {
             System.out.print(soldier + ", ");
         }
         System.out.println();
     }
 
-    public static List<Integer> getPotentialWinners() {
+    public static List<Integer> getPotentialWinners(int [][] win) {
         List<Integer> soldiers = new ArrayList<>();
-        for (int i = 0; i < N; i++) {
-            if (checkSoldierCouldWin(i)) soldiers.add(i);
+        for (int i = 0; i < win.length; i++) {
+            if (checkSoldierCouldWinDfs(i, win)) soldiers.add(i);
         }
         return soldiers;
     }
 
     /**
      * Determin if soldier <code>k</code> could win.
-     * Complexity ~ n^2 for one soldier.
-     *
      * @param k
      * @return
      */
-    private static boolean checkSoldierCouldWin(int k) {
-        List<Boolean> notAddedToSeq = new LinkedList<>();
-        for (int i = 0; i < N; i++) {
-            notAddedToSeq.add(true);
-        }
-        SeqList seq = new SeqList();
-        SeqList.Node n = seq.init(k);
-//        System.out.println(Arrays.toString(seq.toArray()));
+    private static boolean checkSoldierCouldWinDfs(int k, int [][] win) {
+        CyclicSequence seq = new CyclicSequence();
+        System.out.println("For k = " + k);
+        return dfs(k, seq, win);
+    }
 
-        //Kind of breadth-first search
-        Queue<SeqList.Node> queueNotVisited = new LinkedList<>();
-        queueNotVisited.offer(n);
-        while (!queueNotVisited.isEmpty()) {
-            SeqList.Node nodeToVisit = queueNotVisited.poll();
-//            System.out.println("el = " + nodeToVisit.val);
-            for (int idx = ((nodeToVisit.val - 1) % N + N) % N; idx != nodeToVisit.val; idx = ((idx - 1) % N + N) % N) {
-                //we start from the most distant element to the right (left neighbor)
-                if (!notAddedToSeq.get(idx)) continue;
-                if (Win[nodeToVisit.val][idx] == 1) {
-                    SeqList.Node addedNode = seq.tryToAdd(nodeToVisit, idx, k);
-                    if (addedNode != null) {
-                        queueNotVisited.offer(addedNode);
-                        notAddedToSeq.set(addedNode.val, false);
+    private static boolean dfs(int k, CyclicSequence seq, int [][] win) {
+        CyclicSequence.Node addedNode = seq.tryToAdd(k);
+        if (addedNode != null) {
+            System.out.println("k = " + k);
+            System.out.println(seq);
+            Set<Integer> alreadyInSeq = seq.getElementsSet();
+            for (int i = 0; i < win.length; i++) {
+                if (win[k][i] == 1) {
+                    if (!alreadyInSeq.contains(i)) {
+                        CyclicSequence cyclicSequenceCopy = seq.copyWithInsertionCursor();
+                        if (dfs(i, cyclicSequenceCopy, win)) return true;
                     }
-//                    System.out.println(Arrays.toString(seq.toArray()));
                 }
             }
-            notAddedToSeq.set(nodeToVisit.val, false);
         }
-        return seq.size() == N;
+        return seq.size() == win.length;
     }
 }
 
-class SeqList {
+class CyclicSequence {
     private int size;
+    private Node currentWinnerCursor;
+
+    public Set<Integer> getElementsSet() {
+        return Collections.unmodifiableSet(elementsSet);
+    }
+
 
     class Node {
         int val;
-        Node next;
-        Node prev;
+        Node next;//to the right in cycle
+        Node prev; //th the left in cycle
 
         public Node(int val) {
             this.val = val;
@@ -117,108 +113,52 @@ class SeqList {
     private Node head;
     private Node tail;
 
-    public SeqList() {
-    }
-
-    public Node init(int initVal) {
-        ++size;
-        return this.head = tail = new Node(initVal);
-    }
+    private Set<Integer> elementsSet = new HashSet<>();
 
     /**
      * Head is always min.  Tail - max.
      * Adds <code>newVal</code> to suitable place near <code>old</code>.
-     * <code>old</code> should be able to have a fight with new node and win - so new
+     * <code>currentWinnerCursor</code> should be able to have a fight with new node and win - so new
      * node should become new neighbor of
-     * <code>old</code>. If it is impossible method returns null.
+     * <code>currentWinnerCursor</code>. If it is impossible method returns null.
      *
-     * @param old
      * @param newVal
-     * @return null if no suitable place to add
+     * @return null if no suitable place to addToEnd
      */
-    Node tryToAdd(Node old, int newVal, int soldierPotentialWinner) {
-        if (old == null) throw new IllegalArgumentException();
+    Node tryToAdd(int newVal) {
         Node r = null;
-        if (newVal > old.val) {
-            if (old.next != null) {
-                if (newVal < old.next.val) {
-                    r = old.next = new Node(newVal, old.next, old);
+        if (currentWinnerCursor == null) {
+            r = this.head = tail = this.currentWinnerCursor = new Node(newVal);
+        } else if (newVal > currentWinnerCursor.val) {
+            if (currentWinnerCursor.next != null) {
+                if (newVal < currentWinnerCursor.next.val) {
+                    r = currentWinnerCursor.next = new Node(newVal, currentWinnerCursor.next, currentWinnerCursor);
                     r.next.prev = r;
-                } else if (old == head && tail.val < newVal) {
+                } else if (currentWinnerCursor == head && tail.val < newVal) {
                     r = tail = new Node(newVal, null, tail);
                     r.prev.next = r;
-                } else {
-                    //на случай если old.value бьёт newVal, но между ними уже стоят другие бойцы.
-                    //проверяем, может ли old.val пробиться
-                    Node prevNode = old;
-                    Node node = prevNode.next;
-                    boolean canAdd = true;
-                    while (node != null && node.val < newVal) {
-                        if (FightClub.Win[old.val][node.val] == 0 || node.val == soldierPotentialWinner) {
-                            canAdd = false;
-                            break;
-                        }
-                        prevNode = node;
-                        node = node.next;
-                    }
-                    if (canAdd) {
-                        r = prevNode.next = new Node(newVal, prevNode.next, prevNode);
-                        if (prevNode == tail) tail = r;
-                    }
                 }
             } else {
-                r = tail = old.next = new Node(newVal, null, old);
+                r = tail = currentWinnerCursor.next = new Node(newVal, null, currentWinnerCursor);
             }
-        } else if (newVal < old.val) {
-            if (old.prev != null) {
-                if (old.prev.val < newVal) {
-                    r = old.prev = new Node(newVal, old, old.prev);
+        } else if (newVal < currentWinnerCursor.val) {
+            if (currentWinnerCursor.prev != null) {
+                if (currentWinnerCursor.prev.val < newVal) {
+                    r = currentWinnerCursor.prev = new Node(newVal, currentWinnerCursor, currentWinnerCursor.prev);
                     r.prev.next = r;
-                } else if (old == tail && head.val > newVal) {
+                } else if (currentWinnerCursor == tail && head.val > newVal) {
                     r = head = new Node(newVal, head, null);
                     r.next.prev = r;
-                } else {
-                    //на случай если old.value бьёт newVal, но между ними уже стоят другие бойцы.
-                    //проверяем, может ли old.val пробиться
-                    Node prevNode = old;
-                    Node node = prevNode.next;
-                    boolean canAdd = true;
-                    while (node != null && node.val < newVal) {
-                        if (FightClub.Win[old.val][node.val] == 0 || node.val == soldierPotentialWinner) {
-                            canAdd = false;
-                            break;
-                        }
-                        prevNode = node;
-                        node = node.next;
-                    }
-                    if(canAdd) {
-                        node = head;
-                        prevNode = null;
-                        while (node != null && node.val < newVal) {
-                            if (FightClub.Win[old.val][node.val] == 0 || node.val == soldierPotentialWinner) {
-                                canAdd = false;
-                                break;
-                            }
-                            prevNode = node;
-                            node = node.next;
-                        }
-                    }
-                    if (canAdd) {
-                        r = new Node(newVal, prevNode.next, prevNode);
-                        if (prevNode == null) {
-                            r.next = head;
-                            head = r;
-                        }else{
-                            prevNode.next = r;
-                        }
-                        if (prevNode == tail) tail = r;
-                    }
                 }
             } else {
-                r = head = old.prev = new Node(newVal, old, null);
+                r = head = currentWinnerCursor.prev = new Node(newVal, currentWinnerCursor, null);
             }
         }
-        if (r != null) size++;
+        if (r != null) {
+            size++;
+            this.currentWinnerCursor = r;
+            elementsSet.add(newVal);
+        }
         return r;
     }
 
@@ -226,6 +166,37 @@ class SeqList {
         return size;
     }
 
+    @Override
+    public String toString() {
+        return Arrays.toString(toArray());
+    }
+
+
+    public CyclicSequence copyWithInsertionCursor() {
+        CyclicSequence sq = new CyclicSequence();
+        if (head != null) {
+            Node n = head;
+            while (true) {
+                Node added = sq.addToEnd(n.val);
+                if (currentWinnerCursor != null && added.val == currentWinnerCursor.val) sq.currentWinnerCursor = added;
+                if (n == tail) break;
+                n = n.next;
+            }
+        }
+        return sq;
+    }
+
+    private Node addToEnd(int val) {
+        ++size;
+        if (head == null) {
+            head = tail = new Node(val);
+        } else {
+            tail.next = new Node(val, null, tail);
+            tail = tail.next;
+        }
+        elementsSet.add(val);
+        return tail;
+    }
 
     public int[] toArray() {
         int[] a = new int[size];
